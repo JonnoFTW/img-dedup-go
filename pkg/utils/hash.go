@@ -17,7 +17,7 @@ const (
 type ImageHash string
 type HashGrid [8][8]int
 
-// Adapted from
+// Adapted from https://towardsdatascience.com/detection-of-duplicate-images-using-image-hash-functions-4d9c53f04a75
 
 func Hash(img image.Image, method HashMethod) ImageHash {
 	// Grayscale
