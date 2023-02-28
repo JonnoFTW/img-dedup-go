@@ -17,6 +17,8 @@ const (
 type ImageHash string
 type HashGrid [8][8]int
 
+// Adapted from
+
 func Hash(img image.Image, method HashMethod) ImageHash {
 	// Grayscale
 	// Normalize pixel values
@@ -34,7 +36,7 @@ func Hash(img image.Image, method HashMethod) ImageHash {
 	default:
 		grid = perceptualHash(smallImage)
 	}
-	printGrid(grid)
+	//printGrid(grid)
 	return gridToHash(grid)
 
 }
