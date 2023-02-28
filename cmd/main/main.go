@@ -107,9 +107,9 @@ func findDuplicates(directory string) {
 		}
 		duplicates[hash.hash] = append(duplicates[hash.hash], hash.path)
 	}
-	for hash, vals := range duplicates {
+	for hash, duplicateImages := range duplicates {
 		fmt.Println("Hash:", hash)
-		for _, path := range vals {
+		for _, path := range duplicateImages {
 			fmt.Println("\t path=", path)
 		}
 	}
