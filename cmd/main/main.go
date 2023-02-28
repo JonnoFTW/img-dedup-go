@@ -70,7 +70,7 @@ func findImages(directory string, wg *sync.WaitGroup) []ImagePath {
 	images := make([]ImagePath, 0)
 	imagePathChannel := make(chan ImagePath)
 
-	filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
