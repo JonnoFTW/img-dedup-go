@@ -16,7 +16,7 @@ import (
 
 var (
 	directory  = flag.String("directory", "", "directory path")
-	hashMethod = flag.String("hashMethod", "phash", "Hash method, defaults to phash")
+	hashMethod = flag.String("hashMethod", "Average", "Hash method, defaults to phash")
 )
 
 type ImagePath string
