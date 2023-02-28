@@ -15,8 +15,12 @@ import (
 )
 
 var (
-	directory  = flag.String("directory", "", "directory path")
-	hashMethod = flag.String("hashMethod", "Average", "Hash method, defaults to phash")
+	directoryArg  = flag.String("directory", "", "directory path")
+	hashMethodArg = flag.String("hashMethod", "Average", "Hash method, defaults to phash")
+	hashMethods   = map[string]utils.HashMethod{
+		"Average":    utils.Average,
+		"Perceptual": utils.Perceptual,
+	}
 )
 
 type ImagePath string
@@ -26,7 +30,7 @@ type HashedImage struct {
 }
 type Duplicates map[utils.ImageHash][]ImagePath
 
-func getHash(path ImagePath, c chan<- *HashedImage, wg *sync.WaitGroup) {
+func getHash(path ImagePath, hashMethod utils.HashMethod, c chan<- *HashedImage, wg *sync.WaitGroup) {
 	defer wg.Done()
 	f, err := os.Open(string(path))
 	if err != nil {
@@ -40,7 +44,7 @@ func getHash(path ImagePath, c chan<- *HashedImage, wg *sync.WaitGroup) {
 		fmt.Println("Error decoding", path, err.Error())
 		return
 	}
-	hash := utils.Hash(img, utils.Average)
+	hash := utils.Hash(img, hashMethod)
 	hashedImage := HashedImage{
 		path,
 		hash,
@@ -90,15 +94,16 @@ func findImages(directory string, wg *sync.WaitGroup) []ImagePath {
 	fmt.Println("Found", len(images), "images")
 	return images
 }
-func findDuplicates(directory string) {
+func findDuplicates(directory string, hashMethod utils.HashMethod) {
 	// recursively iterate the folder and find all images
 	duplicates := make(Duplicates, 0)
 	imagesChannel := make(chan *HashedImage)
 	wg := new(sync.WaitGroup)
 	images := findImages(directory, wg)
 	wg.Add(len(images))
+
 	for _, img := range images {
-		go getHash(img, imagesChannel, wg)
+		go getHash(img, hashMethod, imagesChannel, wg)
 	}
 	go monitorWorker(wg, imagesChannel)
 	for hash := range imagesChannel {
@@ -116,11 +121,14 @@ func findDuplicates(directory string) {
 }
 func main() {
 	flag.Parse()
-	if *directory == "" {
+	if *directoryArg == "" {
 		log.Fatalf("Please supply a directory")
-
 	}
-	fmt.Println("Detecting duplicates in", *directory)
+	hashMethod, ok := hashMethods[*hashMethodArg]
+	if !ok {
+		log.Fatalf("Invalid hashmethod %s", *hashMethodArg)
+	}
+	fmt.Println("Detecting duplicates in", *directoryArg, "with method", *hashMethodArg)
 	//fmt.Println("Using hash method", *hashMethod)
-	findDuplicates(*directory)
+	findDuplicates(*directoryArg, hashMethod)
 }
