@@ -30,7 +30,7 @@ func getHash(path ImagePath, c chan<- *HashedImage, wg *sync.WaitGroup) {
 	defer wg.Done()
 	f, err := os.Open(string(path))
 	if err != nil {
-		fmt.Errorf("Failed to read %s", f)
+		log.Print(fmt.Errorf("failed to read %s", err))
 		return
 	}
 	defer f.Close()
