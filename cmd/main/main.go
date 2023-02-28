@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	image "image"
+	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
