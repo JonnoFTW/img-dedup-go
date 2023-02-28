@@ -80,6 +80,9 @@ func findImages(directory string, wg *sync.WaitGroup) []ImagePath {
 		}
 		return nil
 	})
+	if err != nil {
+		log.Fatalf("failed to walk directory %s: %s", directory, err.Error())
+	}
 	go monitorWorker(wg, imagePathChannel)
 	for path := range imagePathChannel {
 		images = append(images, path)
