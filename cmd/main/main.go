@@ -126,7 +126,7 @@ func main() {
 	}
 	hashMethod, ok := hashMethods[*hashMethodArg]
 	if !ok {
-		log.Fatalf("Invalid hashmethod %s", *hashMethodArg)
+		log.Fatalf("Invalid hash method '%s' must be one of %s", *hashMethodArg, hashMethods)
 	}
 	fmt.Println("Detecting duplicates in", *directoryArg, "with method", *hashMethodArg)
 	//fmt.Println("Using hash method", *hashMethod)
