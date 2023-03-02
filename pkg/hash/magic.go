@@ -1,4 +1,4 @@
-package utils
+package hash
 
 var (
 	JPEG_MAGIC_BYTES = []byte{0xff, 0xd8, 0xff, 0xe0}
