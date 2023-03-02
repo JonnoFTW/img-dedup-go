@@ -10,27 +10,27 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"ssim/pkg/utils"
+	"ssim/pkg/hash"
 	"sync"
 )
 
 var (
 	directoryArg  = flag.String("directory", "", "directory path")
 	hashMethodArg = flag.String("hashMethod", "Average", "Hash method, defaults to phash")
-	hashMethods   = map[string]utils.HashMethod{
-		"Average":    utils.Average,
-		"Perceptual": utils.Perceptual,
+	hashMethods   = map[string]hash.HashMethod{
+		"Average":    hash.Average,
+		"Perceptual": hash.Perceptual,
 	}
 )
 
 type ImagePath string
 type HashedImage struct {
 	path ImagePath
-	hash utils.ImageHash
+	hash hash.ImageHash
 }
-type Duplicates map[utils.ImageHash][]ImagePath
+type Duplicates map[hash.ImageHash][]ImagePath
 
-func getHash(path ImagePath, hashMethod utils.HashMethod, c chan<- *HashedImage, wg *sync.WaitGroup) {
+func getHash(path ImagePath, hashMethod hash.HashMethod, c chan<- *HashedImage, wg *sync.WaitGroup) {
 	defer wg.Done()
 	f, err := os.Open(string(path))
 	if err != nil {
@@ -44,10 +44,10 @@ func getHash(path ImagePath, hashMethod utils.HashMethod, c chan<- *HashedImage,
 		fmt.Println("Error decoding", path, err.Error())
 		return
 	}
-	hash := utils.Hash(img, hashMethod)
+	imgHash := hash.Hash(&img, hashMethod)
 	hashedImage := HashedImage{
 		path,
-		hash,
+		imgHash,
 	}
 	c <- &hashedImage
 }
@@ -62,7 +62,7 @@ func checkMagic(path string, c chan<- ImagePath, wg *sync.WaitGroup) {
 	buff := make([]byte, 4)
 	var readBytes int
 	readBytes, err = f.Read(buff)
-	if readBytes != 8 || reflect.DeepEqual(buff, utils.JPEG_MAGIC_BYTES) || reflect.DeepEqual(buff, utils.PNG_MAGIC_BYTES) {
+	if readBytes != 8 || reflect.DeepEqual(buff, hash.JPEG_MAGIC_BYTES) || reflect.DeepEqual(buff, hash.PNG_MAGIC_BYTES) {
 		c <- ImagePath(path)
 	}
 }
@@ -94,7 +94,7 @@ func findImages(directory string, wg *sync.WaitGroup) []ImagePath {
 	fmt.Println("Found", len(images), "images")
 	return images
 }
-func findDuplicates(directory string, hashMethod utils.HashMethod) {
+func findDuplicates(directory string, hashMethod hash.HashMethod) {
 	// recursively iterate the folder and find all images
 	duplicates := make(Duplicates, 0)
 	imagesChannel := make(chan *HashedImage)
@@ -106,14 +106,14 @@ func findDuplicates(directory string, hashMethod utils.HashMethod) {
 		go getHash(img, hashMethod, imagesChannel, wg)
 	}
 	go monitorWorker(wg, imagesChannel)
-	for hash := range imagesChannel {
-		if _, ok := duplicates[hash.hash]; !ok {
-			duplicates[hash.hash] = make([]ImagePath, 0)
+	for imgHash := range imagesChannel {
+		if _, ok := duplicates[imgHash.hash]; !ok {
+			duplicates[imgHash.hash] = make([]ImagePath, 0)
 		}
-		duplicates[hash.hash] = append(duplicates[hash.hash], hash.path)
+		duplicates[imgHash.hash] = append(duplicates[imgHash.hash], imgHash.path)
 	}
-	for hash, duplicateImages := range duplicates {
-		fmt.Println("Hash:", hash)
+	for imgHash, duplicateImages := range duplicates {
+		fmt.Printf("Hash: %064b\n", imgHash)
 		for _, path := range duplicateImages {
 			fmt.Println("\t path=", path)
 		}
@@ -129,6 +129,6 @@ func main() {
 		log.Fatalf("Invalid hash method '%s' must be one of %s", *hashMethodArg, hashMethods)
 	}
 	fmt.Println("Detecting duplicates in", *directoryArg, "with method", *hashMethodArg)
-	//fmt.Println("Using hash method", *hashMethod)
+	fmt.Println("Using hash method", *hashMethodArg)
 	findDuplicates(*directoryArg, hashMethod)
 }
