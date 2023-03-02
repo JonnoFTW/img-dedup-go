@@ -5,6 +5,10 @@ import (
 	"math"
 )
 
+func dct2(val float64, n int, N int, k int) float64 {
+	return val * math.Cos(((math.Pi*float64(k))*float64(2*n+1))/float64(2*N))
+}
+
 func Dct2(vals [][]float64, axis int) [][]float64 {
 	// https://en.wikipedia.org/wiki/Discrete_cosine_transform#DCT-II
 	// https://docs.scipy.org/doc/scipy/reference/generated/scipy.fftpack.dct.html
@@ -19,7 +23,7 @@ func Dct2(vals [][]float64, axis int) [][]float64 {
 			for k := 0; k < N; k++ {
 				sum := 0.0
 				for n := 0; n < N; n++ { // go down the row
-					sum += vals[n][colIdx] * math.Cos(((math.Pi*float64(k))*float64(2*n+1))/float64(2*N))
+					sum += dct2(vals[n][colIdx], n, N, k)
 				}
 				out[k][colIdx] = 2. * sum
 			}
@@ -31,7 +35,7 @@ func Dct2(vals [][]float64, axis int) [][]float64 {
 			for k := 0; k < N; k++ {
 				sum := 0.0
 				for n := 0; n < N; n++ {
-					sum += x[n] * math.Cos(((math.Pi*float64(k))*float64(2*n+1))/float64(2*N))
+					sum += dct2(x[n], n, N, k)
 				}
 				out[rowIdx][k] = 2. * sum
 			}
