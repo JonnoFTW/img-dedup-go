@@ -12,6 +12,7 @@ type HashMethod int
 const (
 	Average    HashMethod = iota
 	Perceptual HashMethod = iota
+	Difference HashMethod = iota
 )
 
 type ImageHash uint64
@@ -20,22 +21,15 @@ type HashGrid [8][8]int
 // Adapted from https://towardsdatascience.com/detection-of-duplicate-images-using-image-hash-functions-4d9c53f04a75
 
 func Hash(img *image.Image, method HashMethod) ImageHash {
-	// Grayscale
-	// Normalize pixel values
-	// Resize the image to 8x8, return that as a string
-	//grayscaleImage := image.NewGray(img.Bounds())
-	//draw.Draw(grayscaleImage, grayscaleImage.Bounds(), img, img.Bounds().Min, draw.Src)
-	//
-	//smallImage := image.NewGray(image.Rect(0, 0, 8, 8))
-	//draw.BiLinear.Scale(smallImage, smallImage.Rect, grayscaleImage, grayscaleImage.Bounds(), draw.Over, nil)
-
-	// based on the specified method type, pick the hash algorithm, and then return it
+	// based on the specified method type, pick the hash algorithm, run it and return the result
 	var hash ImageHash
 	switch method {
 	case Average:
 		hash = averageHash(img)
 	case Perceptual:
 		hash = perceptualHash(img)
+	case Difference:
+		hash = differenceHash(img)
 	}
 	return hash
 }
@@ -128,6 +122,27 @@ func perceptualHash(img *image.Image) ImageHash {
 			}
 		}
 	}
+	return hash
+}
+
+func differenceHash(img *image.Image) ImageHash {
+	// https://github.com/JohannesBuchner/imagehash/blob/master/imagehash/__init__.py#L303
+	smallGrayImage := resize(grayscale(img), 8, 9)
+	hash := ImageHash(0)
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			if smallGrayImage.GrayAt(i, j).Y > smallGrayImage.GrayAt(i, j+1).Y {
+				bitIndex := i*8 + j
+				hash += 1 << bitIndex
+			}
+		}
+	}
+	return hash
+}
+
+func waveletHash(img *image.Image) ImageHash {
+	hash := ImageHash(0)
+
 	return hash
 }
 
