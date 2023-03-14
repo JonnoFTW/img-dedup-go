@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/schollz/progressbar/v3"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"ssim/pkg/hash"
+	"strings"
 	"sync"
 )
 
@@ -20,6 +22,7 @@ var (
 	hashMethods   = map[string]hash.HashMethod{
 		"Average":    hash.Average,
 		"Perceptual": hash.Perceptual,
+		"Difference": hash.Difference,
 	}
 )
 
@@ -30,7 +33,7 @@ type HashedImage struct {
 }
 type Duplicates map[hash.ImageHash][]ImagePath
 
-func getHash(path ImagePath, hashMethod hash.HashMethod, c chan<- *HashedImage, wg *sync.WaitGroup) {
+func getHash(path ImagePath, hashMethod hash.HashMethod, c chan<- *HashedImage, wg *sync.WaitGroup, bar *progressbar.ProgressBar) {
 	defer wg.Done()
 	f, err := os.Open(string(path))
 	if err != nil {
@@ -49,6 +52,7 @@ func getHash(path ImagePath, hashMethod hash.HashMethod, c chan<- *HashedImage, 
 		path,
 		imgHash,
 	}
+	bar.Add(1)
 	c <- &hashedImage
 }
 func checkMagic(path string, c chan<- ImagePath, wg *sync.WaitGroup) {
@@ -62,7 +66,7 @@ func checkMagic(path string, c chan<- ImagePath, wg *sync.WaitGroup) {
 	buff := make([]byte, 4)
 	var readBytes int
 	readBytes, err = f.Read(buff)
-	if readBytes != 8 || reflect.DeepEqual(buff, hash.JPEG_MAGIC_BYTES) || reflect.DeepEqual(buff, hash.PNG_MAGIC_BYTES) {
+	if readBytes == 4 && (reflect.DeepEqual(buff, hash.JPEG_MAGIC_BYTES) || reflect.DeepEqual(buff, hash.JPEG_EXIF_MAGIC_BYTES) || reflect.DeepEqual(buff, hash.PNG_MAGIC_BYTES)) {
 		c <- ImagePath(path)
 	}
 }
@@ -78,7 +82,7 @@ func findImages(directory string, wg *sync.WaitGroup) []ImagePath {
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
-		if !info.IsDir() {
+		if !info.IsDir() && (strings.HasSuffix(strings.ToLower(path), "png") || strings.HasSuffix(strings.ToLower(path), "jpg")) {
 			wg.Add(1)
 			go checkMagic(path, imagePathChannel, wg)
 		}
@@ -101,9 +105,9 @@ func findDuplicates(directory string, hashMethod hash.HashMethod) {
 	wg := new(sync.WaitGroup)
 	images := findImages(directory, wg)
 	wg.Add(len(images))
-
+	bar := progressbar.Default(int64(len(images)))
 	for _, img := range images {
-		go getHash(img, hashMethod, imagesChannel, wg)
+		go getHash(img, hashMethod, imagesChannel, wg, bar)
 	}
 	go monitorWorker(wg, imagesChannel)
 	for imgHash := range imagesChannel {
@@ -112,10 +116,13 @@ func findDuplicates(directory string, hashMethod hash.HashMethod) {
 		}
 		duplicates[imgHash.hash] = append(duplicates[imgHash.hash], imgHash.path)
 	}
+	fmt.Println("Potential Duplicates:")
 	for imgHash, duplicateImages := range duplicates {
-		fmt.Printf("Hash: %064b\n", imgHash)
-		for _, path := range duplicateImages {
-			fmt.Println("\t path=", path)
+		if len(duplicateImages) > 1 {
+			fmt.Printf("Hash: %064b\n", imgHash)
+			for _, path := range duplicateImages {
+				fmt.Println("\t path=", path)
+			}
 		}
 	}
 }
@@ -129,6 +136,5 @@ func main() {
 		log.Fatalf("Invalid hash method '%s' must be one of %s", *hashMethodArg, hashMethods)
 	}
 	fmt.Println("Detecting duplicates in", *directoryArg, "with method", *hashMethodArg)
-	fmt.Println("Using hash method", *hashMethodArg)
 	findDuplicates(*directoryArg, hashMethod)
 }
