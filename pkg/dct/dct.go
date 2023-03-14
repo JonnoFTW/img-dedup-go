@@ -5,8 +5,31 @@ import (
 	"math"
 )
 
+var (
+	cosCache = make([]float64, 0)
+)
+
+func getCacheIdx(n int, N int, k int) int {
+	return n*N + k
+}
+func getCachedCos(n int, N int, k int) float64 {
+	// Cache is only valid for a single value of N
+	// Since this program uses a single hash type per run, there should only be 1 value of N
+	// so the cache should only be generated once
+	Np := N + 1
+	cacheSize := Np * Np
+	if len(cosCache) != cacheSize {
+		cosCache = make([]float64, cacheSize)
+		for _n := 0; _n < N; _n++ {
+			for _k := 0; _k < N; _k++ {
+				cosCache[getCacheIdx(_n, N, _k)] = math.Cos(((math.Pi * float64(_k)) * float64(2*_n+1)) / float64(2*N))
+			}
+		}
+	}
+	return cosCache[getCacheIdx(n, N, k)]
+}
 func dct2(val float64, n int, N int, k int) float64 {
-	return val * math.Cos(((math.Pi*float64(k))*float64(2*n+1))/float64(2*N))
+	return val * getCachedCos(n, N, k)
 }
 
 func Dct2(vals [][]float64, axis int) [][]float64 {
