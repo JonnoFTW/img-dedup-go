@@ -3,7 +3,9 @@ package dct
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func TestDct(t *testing.T) {
@@ -72,6 +74,25 @@ func TestDct(t *testing.T) {
 	if !checkDelta(expectedAxis1, oursAxis1) {
 		t.Errorf("Outputs are not equal when axis=1!;\n\nwant\n\n%v\n\ngot\n%v", printSlice(expectedAxis1), printSlice(oursAxis1))
 	}
+}
+
+func TestDct2Loop(t *testing.T) {
+	dim := 16
+	data := make([][]float64, dim)
+	for i, _ := range data {
+		row := make([]float64, dim)
+		for j := range row {
+			row[j] = rand.Float64()
+		}
+		data[i] = row
+	}
+	start := time.Now().UnixNano()
+	for i := 0; i < 100000; i++ {
+		Dct2(data, 0)
+	}
+	end := time.Now().UnixNano()
+	Dct2(data, 0)
+	fmt.Println("Took", (end-start)/10e9, "seconds")
 }
 
 func checkDelta(expected [][]float64, observed [][]float64) bool {
