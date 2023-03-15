@@ -1,8 +1,6 @@
 .PHONY=clean
 
 build:
-	go build
+	go build -o main cmd/main/main.go
 clean:
-	rm -rf *.o
-install:
-	echo "Install"
+	rm -rf main
