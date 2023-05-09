@@ -69,7 +69,10 @@ func checkMagic(path string, c chan<- ImagePath, wg *sync.WaitGroup) {
 	buff := make([]byte, 4)
 	var readBytes int
 	readBytes, err = f.Read(buff)
-	if readBytes == 4 && (reflect.DeepEqual(buff, hash.JPEG_MAGIC_BYTES) || reflect.DeepEqual(buff, hash.JPEG_EXIF_MAGIC_BYTES) || reflect.DeepEqual(buff, hash.PNG_MAGIC_BYTES)) {
+	if readBytes == 4 &&
+		(reflect.DeepEqual(buff, hash.JPEG_MAGIC_BYTES) ||
+			reflect.DeepEqual(buff, hash.JPEG_EXIF_MAGIC_BYTES) ||
+			reflect.DeepEqual(buff, hash.PNG_MAGIC_BYTES)) {
 		c <- ImagePath(path)
 	}
 }
@@ -135,6 +138,7 @@ func findDuplicates(directory string, hashMethod hash.HashMethod) {
 		}
 	}
 }
+
 func main() {
 	flag.Parse()
 	if *directoryArg == "" {
