@@ -160,8 +160,9 @@ func waveletHash(img *image.Image) ImageHash {
 func imgToFloat(img *image.Gray) [][]float64 {
 	xMax := img.Bounds().Max.X
 	yMax := img.Bounds().Max.Y
+	out := make([][]float64, xMax)
 	for i := 0; i < xMax; i++ {
-		out = append(out, make([]float64, yMax))
+		out[i] = make([]float64, yMax)
 		for j := 0; j < yMax; j++ {
 			out[i][j] = float64(img.GrayAt(i, j).Y) / 255.
 		}
