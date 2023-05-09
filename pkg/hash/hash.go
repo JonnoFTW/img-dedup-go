@@ -20,6 +20,7 @@ type HashGrid [8][8]int
 
 // Adapted from https://towardsdatascience.com/detection-of-duplicate-images-using-image-hash-functions-4d9c53f04a75
 
+// Hash will calculate the hash of an image using the specified method
 func Hash(img *image.Image, method HashMethod) ImageHash {
 	// based on the specified method type, pick the hash algorithm, run it and return the result
 	var hash ImageHash
@@ -33,11 +34,15 @@ func Hash(img *image.Image, method HashMethod) ImageHash {
 	}
 	return hash
 }
+
+// grayscale - convert an image to grayscale
 func grayscale(img *image.Image) *image.Gray {
 	grayscaledImage := image.NewGray((*img).Bounds())
 	draw.Draw(grayscaledImage, grayscaledImage.Bounds(), (*img), (*img).Bounds().Min, draw.Src)
 	return grayscaledImage
 }
+
+// resize an image to the speified width and height
 func resize(img *image.Gray, width int, height int) *image.Gray {
 	resizedImg := image.NewGray(image.Rect(0, 0, width, height))
 	draw.BiLinear.Scale(resizedImg, resizedImg.Bounds(), img, img.Bounds(), draw.Over, nil)
@@ -68,6 +73,8 @@ func printGrid(grid *HashGrid) {
 		fmt.Println()
 	}
 }
+
+// averageHash of an image, any pixel above the average pixel value is 1, otherwise 0
 func averageHash(img *image.Image) ImageHash {
 	smallGrayImg := resize(grayscale(img), 8, 8)
 	hash := ImageHash(0)
@@ -125,6 +132,9 @@ func perceptualHash(img *image.Image) ImageHash {
 	return hash
 }
 
+// differenceHash of an image:
+//  reduce image to 8x9,
+//  return array where 1 if the pixel to the right is more than the current pixel, otherwise 0
 func differenceHash(img *image.Image) ImageHash {
 	// https://github.com/JohannesBuchner/imagehash/blob/master/imagehash/__init__.py#L303
 	smallGrayImage := resize(grayscale(img), 8, 9)
@@ -146,8 +156,8 @@ func waveletHash(img *image.Image) ImageHash {
 	return hash
 }
 
+// imgToFloat convert an image to floating point values between 0 and 1
 func imgToFloat(img *image.Gray) [][]float64 {
-	out := make([][]float64, 0)
 	xMax := img.Bounds().Max.X
 	yMax := img.Bounds().Max.Y
 	for i := 0; i < xMax; i++ {

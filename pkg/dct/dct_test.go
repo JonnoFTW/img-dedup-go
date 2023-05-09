@@ -29,6 +29,7 @@ func TestDct(t *testing.T) {
 		t.Errorf("Outputs are not equal when axis=0!; want\n%v\ngot\n%v", expectedSingleRowAxis0, ourSingleRowAxis0)
 	}
 
+	// Test values here were generated with scipy to be used as a reference
 	data := [][]float64{
 
 		{0.8160599232925247, 0.9748617929054211, 0.3150309664690698, 0.07860942529857207, 0.3234509518829781, 0.37270742007044677, 0.1962563356108582, 0.6662269713780992},
@@ -77,6 +78,7 @@ func TestDct(t *testing.T) {
 }
 
 func TestDct2Loop(t *testing.T) {
+	// Measure the performance of DCT2
 	dim := 16
 	data := make([][]float64, dim)
 	for i, _ := range data {
@@ -95,6 +97,7 @@ func TestDct2Loop(t *testing.T) {
 	fmt.Println("Took", (end-start)/10e9, "seconds")
 }
 
+// checkDelta will check if 2 arrays have the same shape and the values are *nearly* the same, within ±eps at each position
 func checkDelta(expected [][]float64, observed [][]float64) bool {
 	eps := 0.001
 	if len(expected) != len(observed) {
@@ -112,6 +115,7 @@ func checkDelta(expected [][]float64, observed [][]float64) bool {
 	}
 	return true
 }
+
 func printSlice(vals [][]float64) string {
 	out := ""
 	for _, row := range vals {

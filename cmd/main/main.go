@@ -33,6 +33,7 @@ type HashedImage struct {
 }
 type Duplicates map[hash.ImageHash][]ImagePath
 
+// getHash computes the hash of a given file using the specified hashing algorithm
 func getHash(path ImagePath, hashMethod hash.HashMethod, c chan<- *HashedImage, wg *sync.WaitGroup, bar *progressbar.ProgressBar) {
 	defer wg.Done()
 	f, err := os.Open(string(path))
@@ -55,8 +56,10 @@ func getHash(path ImagePath, hashMethod hash.HashMethod, c chan<- *HashedImage, 
 	bar.Add(1)
 	c <- &hashedImage
 }
+
+// checkMagic will check the first 4 bytes at the start of the file to see if they indicate png or jpeg
 func checkMagic(path string, c chan<- ImagePath, wg *sync.WaitGroup) {
-	// Check magic bytes at the start of the file to see if they are png or jpeg
+
 	defer wg.Done()
 	f, err := os.Open(path)
 	if err != nil {
@@ -70,10 +73,14 @@ func checkMagic(path string, c chan<- ImagePath, wg *sync.WaitGroup) {
 		c <- ImagePath(path)
 	}
 }
+
+// monitorWorker will wait until all jobs in the WaitGroup have completed
 func monitorWorker[T any](wg *sync.WaitGroup, cs chan T) {
 	wg.Wait()
 	close(cs)
 }
+
+// findImages finds png and jpg under a directory
 func findImages(directory string, wg *sync.WaitGroup) []ImagePath {
 	images := make([]ImagePath, 0)
 	imagePathChannel := make(chan ImagePath)
@@ -98,8 +105,10 @@ func findImages(directory string, wg *sync.WaitGroup) []ImagePath {
 	fmt.Println("Found", len(images), "images")
 	return images
 }
+
+// findDuplicates recursively iterates the given directory and finds and prints all duplicate image paths
+// TODO: use string similarity to compare images with near-identical hash
 func findDuplicates(directory string, hashMethod hash.HashMethod) {
-	// recursively iterate the folder and find all images
 	duplicates := make(Duplicates, 0)
 	imagesChannel := make(chan *HashedImage)
 	wg := new(sync.WaitGroup)
