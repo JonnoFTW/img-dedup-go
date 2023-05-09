@@ -11,20 +11,33 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"ssim/pkg/hash"
 	"strings"
 	"sync"
 )
 
 var (
-	directoryArg  = flag.String("directory", "", "directory path")
-	hashMethodArg = flag.String("hashMethod", "Average", "Hash method, defaults to phash")
-	hashMethods   = map[string]hash.HashMethod{
+	directoryArg = flag.String("directory", "", "directory path")
+	hashMethods  = map[string]hash.HashMethod{
 		"Average":    hash.Average,
 		"Perceptual": hash.Perceptual,
 		"Difference": hash.Difference,
 	}
+	hashMethodArg = flag.String("hashMethod", "Difference", "Hash method. Must be one of "+keysToStr(hashMethods))
 )
+
+// keysToStr convert a map to string
+func keysToStr(m map[string]hash.HashMethod) string {
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, ", ")
+}
 
 type ImagePath string
 type HashedImage struct {
@@ -142,10 +155,12 @@ func findDuplicates(directory string, hashMethod hash.HashMethod) {
 func main() {
 	flag.Parse()
 	if *directoryArg == "" {
+		flag.Usage()
 		log.Fatalf("Please supply a directory")
 	}
 	hashMethod, ok := hashMethods[*hashMethodArg]
 	if !ok {
+		flag.Usage()
 		log.Fatalf("Invalid hash method '%s' must be one of %s", *hashMethodArg, hashMethods)
 	}
 	fmt.Println("Detecting duplicates in", *directoryArg, "with method", *hashMethodArg)
